@@ -3,7 +3,7 @@ package parser
 import (
 	"fmt"
 
-	"github.com/alecthomas/participle/lexer"
+	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -17,9 +17,9 @@ type MacroBody struct {
 }
 
 func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
-	token, err := lex.Next()
-	if err != nil {
-		return fmt.Errorf("Get 'BEGIN' token: %w", err)
+	token := lex.Next()
+	if token.EOF() {
+		return fmt.Errorf("unexpected EOF, expected 'BEGIN'")
 	}
 	if token.Value != "BEGIN" {
 		return fmt.Errorf("Expected 'BEGIN', Got '%s'", token.Value)
@@ -30,19 +30,21 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 	m.Tokens = make(map[string]string)
 	symbols := smiLexer.Symbols()
 	for {
-		token, err = lex.Next()
-		if err != nil {
-			return fmt.Errorf("Next token: %w", err)
+		token = lex.Next()
+		if token.EOF() {
+			return fmt.Errorf("unexpected EOF, expected 'END'")
 		}
 		if token.Value == "END" {
 			break
 		}
-		peek, _ := lex.Peek(0)
-		if ((token.Value == "TYPE" || token.Value == "VALUE") && peek.Value == "NOTATION") || peek.Type == symbols["Assign"] {
+		peek := lex.Peek()
+		assignType := symbols["Assign"]
+		textType := symbols["Text"]
+		if ((token.Value == "TYPE" || token.Value == "VALUE") && peek.Value == "NOTATION") || peek.Type == assignType {
 			if peek.Value == "NOTATION" {
 				tokenName += " NOTATION"
-				// Peek should guarantee there is a next token
-				_, _ = lex.Next()
+				// Consume the peeked "NOTATION" token
+				lex.Next()
 				continue
 			}
 			if tokenName != "" {
@@ -57,16 +59,16 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 			}
 			tokenName = token.Value
 			tokenValue = ""
-			if peek.Type == symbols["Assign"] {
-				// Peek should guarantee there is a next token
-				_, _ = lex.Next()
+			if peek.Type == assignType {
+				// Consume the peeked "Assign" token
+				lex.Next()
 			}
 			continue
 		}
 		if len(tokenValue) > 0 {
 			tokenValue += " "
 		}
-		if token.Type == symbols["Text"] {
+		if token.Type == textType {
 			tokenValue += `"` + token.Value + `"`
 		} else {
 			tokenValue += token.Value

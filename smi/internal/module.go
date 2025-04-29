@@ -349,7 +349,7 @@ func LoadModule(name string) (*Module, error) {
 	}
 	defer f.Close()
 	//log.Printf("%s: Found at %s", name, path)
-	in, err := parser.Parse(f)
+	in, err := parser.Parse(path, f)
 	if err != nil {
 		return nil, fmt.Errorf("Parse module: %w", err)
 	}

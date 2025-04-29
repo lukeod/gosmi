@@ -1,7 +1,9 @@
 package parser
 
 import (
-	"github.com/alecthomas/participle/lexer"
+	"fmt"
+
+	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -63,17 +65,23 @@ type Compliance struct {
 type ComplianceModuleName string
 
 func (n *ComplianceModuleName) Parse(lex *lexer.PeekingLexer) error {
-	token, err := lex.Peek(0)
-	if err != nil {
-		return err
-	}
-	if token.Type == smiLexer.Symbols()["Assign"] || token.Value == "MANDATORY-GROUPS" || token.Value == "GROUP" || token.Value == "OBJECT" {
+	token := lex.Peek()
+	if token.EOF() {
+		// If we hit EOF, it means the module name is implicitly empty, which is valid.
 		*n = ""
 		return nil
 	}
-	token, err = lex.Next()
-	if err != nil {
-		return err
+	assignType := smiLexer.Symbols()["Assign"]
+	if token.Type == assignType || token.Value == "MANDATORY-GROUPS" || token.Value == "GROUP" || token.Value == "OBJECT" {
+		// If the next token indicates the start of the next clause, the module name is implicitly empty.
+		*n = ""
+		return nil
+	}
+	// Consume the token we peeked at.
+	token = lex.Next()
+	if token.EOF() {
+		// Should not happen after a non-EOF peek, but handle defensively.
+		return fmt.Errorf("unexpected EOF after peeking at module name token %q", token)
 	}
 	*n = ComplianceModuleName(token.Value)
 	return nil

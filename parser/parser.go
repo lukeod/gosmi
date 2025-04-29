@@ -4,76 +4,88 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
-	"strings"
+	"regexp"  // For strconv.Unquote (potentially)
+	"strings" // For strings.ReplaceAll
 
-	"github.com/alecthomas/participle"
-	"github.com/alecthomas/participle/lexer"
-	"github.com/alecthomas/participle/lexer/ebnf"
+	"github.com/alecthomas/participle/v2"       // Updated import path
+	"github.com/alecthomas/participle/v2/lexer" // Updated import path
+	// Removed ebnf import: "github.com/alecthomas/participle/lexer/ebnf"
 )
 
 var (
-	// TODO: Comments can also end with a "--"
-	// Per the ASN.1 (ITU-T X.680) specification of a number token (Int below):
-	// The first digit shall not be zero unless the "number" is a single digit.
-	smiLexer = lexer.Must(ebnf.New(`
-		Keyword = "FROM" .
-		ObjectIdentifier = "OBJECT" Whitespace { Whitespace } "IDENTIFIER" .
-		OctetString = "OCTET" Whitespace { Whitespace } "STRING" .
-		BinString = "'" { "0" | "1" } "'" ( "b" | "B" ) .
-		HexString = "'" { digit | "a"…"f" | "A"…"F" } "'" ( "h" | "H" ) .
-		Assign = "::=" .
-		Comment = "--" { "\u0000"…"\U0010ffff"-"\n" } .
-		ExtUTCTime = "\"" digit digit digit digit digit digit digit digit digit digit [ digit digit ] ( "z" | "Z" ) "\"" .
-		Text = "\"" { "\u0000"…"\U0010ffff"-"\"" } "\"" .
-		Ident = alpha { alpha | digit | "-" | "_" } .
-		Int = "0" | ( digit { digit } ) .
-		Punct = ".." | "!"…"/" | ":"…"@" | "["…` + "\"`\"" + ` | "{"…"~" .
-		Whitespace = " " | "\t" | "\n" | "\r" .
+	// Define the lexer using lexer.NewSimple
+	smiLexer = lexer.MustSimple([]lexer.SimpleRule{
+		{"Comment", `--[^\n]*`},
+		{"Whitespace", `[ \t\n\r]+`},
+		// Keywords and specific multi-word tokens need to be defined before Ident
+		// Use non-capturing groups for spaces to avoid them being part of the token value if needed,
+		// although participle.Map is used later anyway.
+		{"ObjectIdentifier", `OBJECT\s+IDENTIFIER`},
+		{"OctetString", `OCTET\s+STRING`},
+		{"Keyword", `FROM`}, // Example keyword, others handled by Ident + parser rules
+		{"Assign", `::=`},
+		{"ExtUTCTime", `"(\d{10}(\d{2})?[zZ])"`}, // Capture content inside quotes
+		{"Text", `"(\\.|[^"])*"`},                // Capture content inside quotes, allowing escaped quotes
+		{"BinString", `'[01]+'[bB]`},
+		{"HexString", `'[0-9a-fA-F]+'[hH]`},
+		{"Ident", `[a-zA-Z][a-zA-Z0-9_-]*`},
+		{"Int", `0|[1-9]\d*`},
+		{"Punct", `\.\.|[!-/:-@\[\\` + "`" + `{-\~]`}, // Punctuation
+	})
 
-		lower = "a"…"z" .
-		upper = "A"…"Z" .
-		alpha = lower | upper .
-		digit = "0"…"9" .
-	`))
 	compressSpace = regexp.MustCompile(`(?:\r?\n *)+`)
-	smiParser     = participle.MustBuild(new(Module),
-		participle.Lexer(smiLexer),
+	smiParser     = participle.MustBuild[Module](
+		participle.Lexer(smiLexer),       // Use the new Simple lexer
+		participle.Unquote("ExtUTCTime"), // Use standard unquoting only for dates
 		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			if token.EOF() {
-				return token, nil
-			}
-			token.Value = compressSpace.ReplaceAllString(strings.TrimSpace(strings.Trim(token.Value, `"`)), "\n")
-			return token, nil
-		}, "ExtUTCTime", "Text"),
-		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			token.Value = "OBJECT IDENTIFIER"
+			token.Value = "OBJECT IDENTIFIER" // Ensure the mapped value is correct
 			return token, nil
 		}, "ObjectIdentifier"),
 		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			token.Value = "OCTET STRING"
+			token.Value = "OCTET STRING" // Ensure the mapped value is correct
 			return token, nil
 		}, "OctetString"),
-		//participle.UseLookahead(2),
-		participle.Upper("ExtUTCTime", "BinString", "HexString"),
-		participle.Elide("Whitespace", "Comment"),
+		participle.Map(func(token lexer.Token) (lexer.Token, error) {
+			// Manually unquote: remove outer quotes and handle basic escapes (\", \\).
+			// This avoids issues with strconv.Unquote and raw newlines in multi-line strings.
+			if len(token.Value) < 2 || token.Value[0] != '"' || token.Value[len(token.Value)-1] != '"' {
+				// Should not happen based on the lexer rule, but check defensively.
+				return token, fmt.Errorf("unexpected format for Text token: %q", token.Value)
+			}
+			// Slice off outer quotes
+			content := token.Value[1 : len(token.Value)-1]
+
+			// Handle basic escapes
+			content = strings.ReplaceAll(content, `\\`, `\`)
+			content = strings.ReplaceAll(content, `\"`, `"`)
+
+			token.Value = content
+			return token, nil
+		}, "Text"),
+		//participle.UseLookahead(2), // Keep commented out as original
+		participle.Upper("ExtUTCTime", "BinString", "HexString"), // Keep Upper
+		participle.Elide("Whitespace", "Comment"),                // Keep Elide
 	)
 )
 
-func Parse(r io.Reader) (*Module, error) {
-	m := new(Module)
-	return m, smiParser.Parse(r, m)
+// Parse function needs filename argument for v2
+func Parse(filename string, r io.Reader) (*Module, error) {
+	// Update Parse call signature - Parse now returns the struct and error
+	return smiParser.Parse(filename, r)
 }
 
+// ParseFile already has filename, update Parse call inside
 func ParseFile(path string) (*Module, error) {
 	r, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("Open file: %w", err)
 	}
 	defer r.Close()
-	module, err := Parse(r)
+	// Pass filename to Parse
+	module, err := Parse(path, r)
 	if err != nil {
-		return module, fmt.Errorf("Parse file: %w", err)
+		// Add filename to error context if helpful
+		return module, fmt.Errorf("Parse file %q: %w", path, err)
 	}
 	return module, nil
 }
