@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"  // For strconv.Unquote (potentially)
-	"strings" // For strings.ReplaceAll
+	"regexp"
+	"strings"
 
-	"github.com/alecthomas/participle/v2"       // Updated import path
-	"github.com/alecthomas/participle/v2/lexer" // Updated import path
-	// Removed ebnf import: "github.com/alecthomas/participle/lexer/ebnf"
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
 )
 
 var (
@@ -62,9 +61,8 @@ var (
 			token.Value = content
 			return token, nil
 		}, "Text"),
-		//participle.UseLookahead(2), // Keep commented out as original
-		participle.Upper("ExtUTCTime", "BinString", "HexString"), // Keep Upper
-		participle.Elide("Whitespace", "Comment"),                // Keep Elide
+		participle.Upper("ExtUTCTime", "BinString", "HexString"),
+		participle.Elide("Whitespace", "Comment"),
 	)
 )
 
