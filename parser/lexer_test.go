@@ -142,6 +142,16 @@ line two"`, // Raw newline within the string
 			},
 		},
 		{
+			name:  "Empty Hex String",
+			input: `DEFVAL { ''H }`, // Use within DEFVAL for context
+			expected: []lexer.Token{
+				{Type: smiLexer.Symbols()["Ident"], Value: "DEFVAL"},
+				{Type: smiLexer.Symbols()["Punct"], Value: "{"},
+				{Type: smiLexer.Symbols()["HexString"], Value: `''H`}, // Expect HexString, not Punct, Punct, Ident
+				{Type: smiLexer.Symbols()["Punct"], Value: "}"},
+			},
+		},
+		{
 			name:  "ExtUTCTime - Short",
 			input: `"9505241811Z"`,
 			expected: []lexer.Token{

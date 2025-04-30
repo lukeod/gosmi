@@ -34,7 +34,7 @@ type Sequence struct {
 	Pos lexer.Position
 
 	Type    SequenceType    `parser:"@( \"CHOICE\" | \"SEQUENCE\" )"`
-	Entries []SequenceEntry `parser:"\"{\" @@ ( \",\" @@ )* \",\"? \"}\""`
+	Entries []SequenceEntry `parser:"\"{\" @@ ( \",\" @@ )* \"}\""`
 }
 
 type Implicit struct {

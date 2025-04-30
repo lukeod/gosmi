@@ -9,7 +9,7 @@ import (
 type ObjectGroup struct {
 	Pos lexer.Position
 
-	Objects     []types.SmiIdentifier `parser:"\"OBJECTS\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\""`     // Required
+	Objects     []types.SmiIdentifier `parser:"\"OBJECTS\" \"{\" @Ident ( \",\" @Ident )* \"}\""`            // Required
 	Status      Status                `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required
 	Description string                `parser:"\"DESCRIPTION\" @Text"`                                       // Required
 	Reference   string                `parser:"( \"REFERENCE\" @Text )?"`
@@ -70,7 +70,7 @@ type ObjectType struct {
 	Status      Status               `parser:"\"STATUS\" @( \"mandatory\" | \"optional\" | \"current\" | \"deprecated\" | \"obsolete\" )"`                                                              // Required
 	Description string               `parser:"( \"DESCRIPTION\" @Text )?"`                                                                                                                              // Required RFC 1212+
 	Reference   string               `parser:"( \"REFERENCE\" @Text )?"`
-	Index       []Index              `parser:"( ( \"INDEX\" \"{\" @@ ( \",\" @@ )* \",\"? \"}\" )"` // Required for "row" without AUGMENTS
-	Augments    *types.SmiIdentifier `parser:"| ( \"AUGMENTS\" \"{\" @Ident \"}\" ) )?"`            // Required for "row" without INDEX
-	Defval      *string              `parser:"( \"DEFVAL\" \"{\" @( \"-\"? Int | BinString | HexString | Text | Ident | ( \"{\" ( Int+ | ( Ident ( \",\" Ident )* \",\"? )? ) \"}\" ) ) \"}\" )?"`
+	Index       []Index              `parser:"( ( \"INDEX\" \"{\" @@ ( \",\" @@ )* \"}\" )"` // Required for "row" without AUGMENTS
+	Augments    *types.SmiIdentifier `parser:"| ( \"AUGMENTS\" \"{\" @Ident \"}\" ) )?"`     // Required for "row" without INDEX
+	Defval      *string              `parser:"( \"DEFVAL\" \"{\" @( \"-\"? Int | BinString | HexString | Text | Ident | ( \"{\" \"}\" | \"{\" ( Int+ | Ident ( \",\" Ident )* ) \"}\" ) ) \"}\" )?"`
 }

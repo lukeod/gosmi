@@ -24,16 +24,16 @@ var (
 		{Name: "OctetString", Pattern: `OCTET\s+STRING`},
 		// ASN.1 specific tags - must come before keywords and punctuation
 		{Name: "ASN1Tag", Pattern: `\[APPLICATION\s+\d+\]`},
-		// ASN.1 specific keywords
-		{Name: "Keyword", Pattern: `FROM|IMPLICIT|APPLICATION|CHOICE|SIZE|BEGIN|END|DEFINITIONS`}, // Common keywords in MIB files
+		// ASN.1 specific keywords (APPLICATION handled by ASN1Tag rule)
+		{Name: "Keyword", Pattern: `FROM|IMPLICIT|CHOICE|SIZE|BEGIN|END|DEFINITIONS`}, // Common keywords in MIB files
 		{Name: "Assign", Pattern: `::=`},
 		{Name: "ExtUTCTime", Pattern: `"(\d{10}(\d{2})?[zZ])"`}, // Capture content inside quotes
 		{Name: "Text", Pattern: `"(\\.|[^"])*"`},                // Capture content inside quotes, allowing escaped quotes
-		{Name: "BinString", Pattern: `'[01]+'[bB]`},
-		{Name: "HexString", Pattern: `'[0-9a-fA-F]+'[hH]`},
+		{Name: "BinString", Pattern: `'[01]*'[bB]`},             // Also allow empty binary string ''B
+		{Name: "HexString", Pattern: `'[0-9a-fA-F]*'[hH]`},      // Allow empty hex string ''H
 		{Name: "Ident", Pattern: `[a-zA-Z][a-zA-Z0-9_-]*`},
 		{Name: "Int", Pattern: `0|[1-9]\d*`},
-		{Name: "Punct", Pattern: `\.\.|[!-/:-@\[\\` + "`" + `{-\~]`}, // Punctuation
+		{Name: "Punct", Pattern: `\.\.|[!-\&\\(-/:-@\[\\` + "`" + `{-\~]`}, // Punctuation (excluding ')
 	})
 
 	compressSpace = regexp.MustCompile(`(?:\r?\n *)+`)

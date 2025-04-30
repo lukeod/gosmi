@@ -321,6 +321,46 @@ func TestSyntaxParsing(t *testing.T) {
 					END`,
 			wantErr: true,
 		},
+		{
+			name: "Integer range with MAX keyword",
+			input: `TEST-MIB DEFINITIONS ::= BEGIN
+					testObj OBJECT-TYPE SYNTAX Integer32 (0..MAX) MAX-ACCESS read-only STATUS current ::= { test 1 }
+					test OBJECT IDENTIFIER ::= { iso 1 }
+					END`,
+			wantErr: false, // This should fail initially, then pass after the fix
+			check: func(t *testing.T, mod *parser.Module) {
+				node := testutil.FindNodeByName(t, mod, "testObj")
+				syntax := node.ObjectType.Syntax
+				require.NotNil(t, syntax.Type)
+				require.NotNil(t, syntax.Type.SubType)
+				subType := syntax.Type.SubType
+				require.Len(t, subType.Integer, 1)
+				assert.Equal(t, "0", subType.Integer[0].Start)
+				assert.NotEmpty(t, subType.Integer[0].End, "End value should be present")
+				assert.Equal(t, "MAX", subType.Integer[0].End) // Check for MAX keyword
+				assert.Empty(t, subType.OctetString)
+			},
+		},
+		{
+			name: "Integer range with MIN keyword",
+			input: `TEST-MIB DEFINITIONS ::= BEGIN
+					testObj OBJECT-TYPE SYNTAX Integer32 (MIN..100) MAX-ACCESS read-only STATUS current ::= { test 1 }
+					test OBJECT IDENTIFIER ::= { iso 1 }
+					END`,
+			wantErr: false, // This should fail initially, then pass after the fix
+			check: func(t *testing.T, mod *parser.Module) {
+				node := testutil.FindNodeByName(t, mod, "testObj")
+				syntax := node.ObjectType.Syntax
+				require.NotNil(t, syntax.Type)
+				require.NotNil(t, syntax.Type.SubType)
+				subType := syntax.Type.SubType
+				require.Len(t, subType.Integer, 1)
+				assert.Equal(t, "MIN", subType.Integer[0].Start) // Check for MIN keyword
+				assert.NotEmpty(t, subType.Integer[0].End, "End value should be present")
+				assert.Equal(t, "100", subType.Integer[0].End)
+				assert.Empty(t, subType.OctetString)
+			},
+		},
 
 		// --- Range Tests (within OctetString SIZE SubType) ---
 		{

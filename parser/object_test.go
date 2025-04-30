@@ -405,3 +405,47 @@ END
 		})
 	}
 }
+
+// TestObjectGroupTrailingComma verifies that parsing an OBJECT-GROUP
+// with a trailing comma in the OBJECTS list does not panic.
+// This test is expected to PANIC before the grammar fix.
+func TestObjectGroupTrailingComma(t *testing.T) {
+	input := `
+OBJGROUP-COMMA-MIB DEFINITIONS ::= BEGIN
+IMPORTS OBJECT-GROUP, OBJECT-TYPE, OBJECT-IDENTIFIER, experimental, Integer32 FROM SNMPv2-SMI;
+
+objGroupRoot OBJECT IDENTIFIER ::= { experimental 78 }
+
+obj1 OBJECT-TYPE SYNTAX Integer32 MAX-ACCESS read-only STATUS current DESCRIPTION "Obj 1" ::= { objGroupRoot 1 }
+obj2 OBJECT-TYPE SYNTAX Integer32 MAX-ACCESS read-only STATUS current DESCRIPTION "Obj 2" ::= { objGroupRoot 2 }
+
+testObjectGroupComma OBJECT-GROUP
+    OBJECTS       { obj1, obj2 } -- Trailing comma removed
+    STATUS        current
+    DESCRIPTION   "A group with a trailing comma."
+    ::= { objGroupRoot 3 }
+
+END
+`
+	// Before the fix, this call is expected to panic.
+	// After the fix, it should parse without error.
+	mod, err := parser.Parse("OBJGROUP-COMMA-MIB.mib", strings.NewReader(input))
+
+	// After the fix, we expect no error and a valid module.
+	require.NoError(t, err, "Parsing failed unexpectedly")
+	require.NotNil(t, mod, "Parsed module should not be nil")
+
+	// Find the group and verify its contents after the fix
+	var groupNode *parser.Node
+	for _, node := range mod.Body.Nodes {
+		if node.Name == "testObjectGroupComma" {
+			groupNode = &node
+			break
+		}
+	}
+	require.NotNil(t, groupNode, "Could not find node 'testObjectGroupComma'")
+	require.NotNil(t, groupNode.ObjectGroup, "Node 'testObjectGroupComma' is not an OBJECT-GROUP")
+	assert.Len(t, groupNode.ObjectGroup.Objects, 2, "Expected 2 objects in the group")
+	assert.Equal(t, types.SmiIdentifier("obj1"), groupNode.ObjectGroup.Objects[0])
+	assert.Equal(t, types.SmiIdentifier("obj2"), groupNode.ObjectGroup.Objects[1])
+}

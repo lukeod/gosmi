@@ -15,7 +15,7 @@ type AgentCapabilityVariation struct {
 	Syntax      *Syntax               `parser:"( \"SYNTAX\" @@ )?"`
 	WriteSyntax *Syntax               `parser:"( \"WRITE-SYNTAX\" @@ )?"`
 	Access      *Access               `parser:"( \"ACCESS\" @( \"write-only\" | \"not-implemented\" | \"accessible-for-notify\" | \"read-only\" | \"read-write\" | \"read-create\" ) )?"`
-	Creation    []types.SmiIdentifier `parser:"( \"CREATION-REQUIRES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
+	Creation    []types.SmiIdentifier `parser:"( \"CREATION-REQUIRES\" \"{\" @Ident ( \",\" @Ident )* \"}\" )?"`
 	Defval      *string               `parser:"( \"DEFVAL\" \"{\" @( \"-\"? Int | BinString | HexString | Text | Ident | ( \"{\" ( Int+ | ( Ident ( \",\" Ident )* \",\"? )? ) \"}\" ) ) \"}\" )?"`
 	Description string                `parser:"\"DESCRIPTION\" @Text"` // Required
 }
@@ -23,8 +23,8 @@ type AgentCapabilityVariation struct {
 type AgentCapabilityModule struct {
 	Pos lexer.Position
 
-	Module     types.SmiIdentifier        `parser:"\"SUPPORTS\" @Ident"`                                      // Required
-	Includes   []types.SmiIdentifier      `parser:"\"INCLUDES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\""` // Required
+	Module     types.SmiIdentifier        `parser:"\"SUPPORTS\" @Ident"`                               // Required
+	Includes   []types.SmiIdentifier      `parser:"\"INCLUDES\" \"{\" @Ident ( \",\" @Ident )* \"}\""` // Required
 	Variations []AgentCapabilityVariation `parser:"@@*"`
 }
 
@@ -91,7 +91,7 @@ type ModuleComplianceModule struct {
 	Pos lexer.Position
 
 	Name            ComplianceModuleName  `parser:"@@"`
-	MandatoryGroups []types.SmiIdentifier `parser:"( \"MANDATORY-GROUPS\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
+	MandatoryGroups []types.SmiIdentifier `parser:"( \"MANDATORY-GROUPS\" \"{\" @Ident ( \",\" @Ident )* \"}\" )?"`
 	Compliances     []Compliance          `parser:"@@*"`
 }
 

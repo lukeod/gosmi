@@ -90,8 +90,8 @@ type Oid struct {
 type Range struct {
 	Pos lexer.Position
 
-	Start string `parser:"@( \"-\"? Int | BinString | HexString )"`
-	End   string `parser:"( \"..\" @( \"-\"? Int | BinString | HexString ) )?"`
+	Start string `parser:"@( \"-\"? Int | BinString | HexString | Ident )"`             // Allow Ident (for MIN/MAX)
+	End   string `parser:"( \"..\" @( \"-\"? Int | BinString | HexString | Ident ) )?"` // Allow Ident (for MIN/MAX)
 }
 
 type Status string

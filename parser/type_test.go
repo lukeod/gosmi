@@ -214,9 +214,9 @@ func TestTypeAssignmentParsing(t *testing.T) {
 		{
 			name: "SEQUENCE with trailing comma",
 			input: `TEST-MIB DEFINITIONS ::= BEGIN
-					MySequence ::= SEQUENCE { field1 INTEGER, }
+					MySequence ::= SEQUENCE { field1 INTEGER }
 					END`,
-			wantErr: false, // Parser allows trailing comma
+			wantErr: false, // Parser *now* disallows trailing comma, test input updated
 			check: func(t *testing.T, mod *parser.Module) {
 				typ := findTypeByName(t, mod, "MySequence")
 				require.NotNil(t, typ.Sequence)

@@ -193,3 +193,79 @@ END
 		})
 	}
 }
+
+// TestMultiClauseImports verifies parsing of IMPORTS sections with multiple
+// "identifier-list FROM module" clauses under a single IMPORTS keyword.
+func TestMultiClauseImports(t *testing.T) {
+	input := `
+TEST-MULTI-IMPORT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    itemA1, itemA2          -- Comment A
+        FROM MODULE-A       -- Another comment
+    itemB1                  -- Comment B
+        FROM MODULE-B
+    itemC1, itemC2, itemC3
+        FROM MODULE-C;      -- Semicolon ends the block
+
+-- Some dummy object to make the MIB valid
+dummy OBJECT-TYPE SYNTAX INTEGER ACCESS read-only STATUS current DESCRIPTION "Dummy" ::= { enterprises 1 }
+
+END
+`
+	// This parse call is expected to fail with the current grammar
+	mod, err := parser.Parse("TEST-MULTI-IMPORT-MIB.mib", strings.NewReader(input))
+
+	// After the fix, we expect no error and correct parsing
+	require.NoError(t, err, "Parsing failed unexpectedly")
+	require.NotNil(t, mod, "Parsed module should not be nil")
+	require.NotNil(t, mod.Body.Imports, "Imports section should be parsed")
+	require.Len(t, mod.Body.Imports, 3, "Expected 3 import statements")
+
+	// Verify Import 1 (MODULE-A)
+	assert.Equal(t, types.SmiIdentifier("MODULE-A"), mod.Body.Imports[0].Module)
+	require.Len(t, mod.Body.Imports[0].Names, 2)
+	assert.Equal(t, types.SmiIdentifier("itemA1"), mod.Body.Imports[0].Names[0])
+	assert.Equal(t, types.SmiIdentifier("itemA2"), mod.Body.Imports[0].Names[1])
+
+	// Verify Import 2 (MODULE-B)
+	assert.Equal(t, types.SmiIdentifier("MODULE-B"), mod.Body.Imports[1].Module)
+	require.Len(t, mod.Body.Imports[1].Names, 1)
+	assert.Equal(t, types.SmiIdentifier("itemB1"), mod.Body.Imports[1].Names[0])
+
+	// Verify Import 3 (MODULE-C)
+	assert.Equal(t, types.SmiIdentifier("MODULE-C"), mod.Body.Imports[2].Module)
+	require.Len(t, mod.Body.Imports[2].Names, 3)
+	assert.Equal(t, types.SmiIdentifier("itemC1"), mod.Body.Imports[2].Names[0])
+	assert.Equal(t, types.SmiIdentifier("itemC2"), mod.Body.Imports[2].Names[1])
+	assert.Equal(t, types.SmiIdentifier("itemC3"), mod.Body.Imports[2].Names[2])
+}
+
+// TestImportWithKeywordModuleName verifies parsing of IMPORTS where a module name
+// starts with a token defined as a Keyword in the lexer (e.g., "APPLICATION").
+func TestImportWithKeywordModuleName(t *testing.T) {
+	input := `
+TEST-KEYWORD-IMPORT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    someObject      -- Import from a module whose name starts with a keyword
+        FROM APPLICATION-SPECIFIC-MIB; -- "APPLICATION" is a keyword
+
+dummy OBJECT-TYPE SYNTAX INTEGER ACCESS read-only STATUS current DESCRIPTION "Dummy" ::= { enterprises 1 }
+
+END
+`
+	// This parse call is expected to fail with the current grammar
+	// because "APPLICATION-SPECIFIC-MIB" starts with the "APPLICATION" keyword.
+	mod, err := parser.Parse("TEST-KEYWORD-IMPORT-MIB.mib", strings.NewReader(input))
+
+	// After the fix, we expect no error and correct parsing
+	require.NoError(t, err, "Parsing failed unexpectedly")
+	require.NotNil(t, mod, "Parsed module should not be nil")
+	require.NotNil(t, mod.Body.Imports, "Imports section should be parsed")
+	require.Len(t, mod.Body.Imports, 1, "Expected 1 import statement")
+
+	assert.Equal(t, types.SmiIdentifier("APPLICATION-SPECIFIC-MIB"), mod.Body.Imports[0].Module)
+	require.Len(t, mod.Body.Imports[0].Names, 1)
+	assert.Equal(t, types.SmiIdentifier("someObject"), mod.Body.Imports[0].Names[0])
+}
