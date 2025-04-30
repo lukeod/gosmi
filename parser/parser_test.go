@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sleepinggenius2/gosmi/parser"
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/lukeod/gosmi/parser"
+	"github.com/lukeod/gosmi/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

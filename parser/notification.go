@@ -3,7 +3,7 @@ package parser
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/lukeod/gosmi/types"
 )
 
 type NotificationGroup struct {

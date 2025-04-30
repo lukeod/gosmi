@@ -4,8 +4,8 @@ import (
 	"math"
 	"unsafe"
 
-	"github.com/sleepinggenius2/gosmi/smi/internal"
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/lukeod/gosmi/smi/internal"
+	"github.com/lukeod/gosmi/types"
 )
 
 // SmiRange *smiGetFirstRange(SmiType *smiTypePtr)

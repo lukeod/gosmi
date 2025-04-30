@@ -1,4 +1,4 @@
-module github.com/sleepinggenius2/gosmi
+module github.com/lukeod/gosmi
 
 go 1.18
 
@@ -9,7 +9,9 @@ require (
 )
 
 require (
+	github.com/alecthomas/participle v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/sleepinggenius2/gosmi v0.4.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

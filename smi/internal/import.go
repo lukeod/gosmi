@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/lukeod/gosmi/types"
 )
 
 var importConversions map[types.SmiImport]types.SmiImport = map[types.SmiImport]types.SmiImport{

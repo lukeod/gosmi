@@ -6,7 +6,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/sleepinggenius2/gosmi"
+	"github.com/lukeod/gosmi"
 )
 
 //go:embed FIZBIN-MIB.mib

@@ -1,8 +1,8 @@
 package gosmi
 
 import (
-	"github.com/sleepinggenius2/gosmi/smi"
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/lukeod/gosmi/smi"
+	"github.com/lukeod/gosmi/types"
 )
 
 type Table struct {
