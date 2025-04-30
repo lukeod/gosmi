@@ -40,9 +40,9 @@ type Sequence struct {
 type Implicit struct {
 	Pos lexer.Position
 
-	Application bool       `parser:"\"[\" @\"APPLICATION\"?"`
-	Number      int        `parser:"@Int \"]\""`
-	Syntax      SyntaxType `parser:"\"IMPLICIT\" @@"`
+	// Capture the whole tag token
+	Tag    string     `parser:"@ASN1Tag"`        // Expect the ASN1Tag token
+	Syntax SyntaxType `parser:"\"IMPLICIT\" @@"` // Expect IMPLICIT and the type
 }
 
 type Type struct {

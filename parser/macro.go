@@ -29,24 +29,26 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 	var tokenName, tokenValue string
 	m.Tokens = make(map[string]string)
 	symbols := smiLexer.Symbols()
+	assignType := symbols["Assign"]
+	textType := symbols["Text"]
+
+	// Initial token fetch was done before the loop starts (line 21)
 	for {
-		token = lex.Next()
 		if token.EOF() {
 			return fmt.Errorf("unexpected EOF, expected 'END'")
 		}
 		if token.Value == "END" {
-			break
+			break // Exit loop when END is encountered
 		}
+
 		peek := lex.Peek()
-		assignType := symbols["Assign"]
-		textType := symbols["Text"]
-		if ((token.Value == "TYPE" || token.Value == "VALUE") && peek.Value == "NOTATION") || peek.Type == assignType {
-			if peek.Value == "NOTATION" {
-				tokenName += " NOTATION"
-				// Consume the peeked "NOTATION" token
-				lex.Next()
-				continue
-			}
+
+		// Check if the current token/peek indicates the start of a new section
+		isNotationStart := (token.Value == "TYPE" || token.Value == "VALUE") && peek.Value == "NOTATION"
+		isAssignStart := peek.Type == assignType
+
+		if isNotationStart || isAssignStart {
+			// Assign the previously accumulated name/value before starting the new section
 			if tokenName != "" {
 				switch tokenName {
 				case "TYPE NOTATION":
@@ -57,23 +59,40 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 					m.Tokens[tokenName] = tokenValue
 				}
 			}
-			tokenName = token.Value
-			tokenValue = ""
-			if peek.Type == assignType {
-				// Consume the peeked "Assign" token
-				lex.Next()
+
+			// Set up the new section
+			if isNotationStart {
+				tokenName = token.Value + " NOTATION"
+				tokenValue = ""
+				lex.Next()         // Consume NOTATION
+				token = lex.Next() // Fetch the token *after* NOTATION (should be ::=)
+			} else { // isAssignStart
+				tokenName = token.Value
+				tokenValue = ""
+				lex.Next()         // Consume ::=
+				token = lex.Next() // Fetch the token *after* ::=
 			}
+			// After consuming the delimiter and fetching the next token, restart the loop
+			// This avoids appending the delimiter (::= or NOTATION) or the section name token
 			continue
 		}
+
+		// If not a section start, append the current token's value
 		if len(tokenValue) > 0 {
 			tokenValue += " "
 		}
 		if token.Type == textType {
+			// Re-add quotes for Text tokens as the lexer strips them
 			tokenValue += `"` + token.Value + `"`
 		} else {
 			tokenValue += token.Value
 		}
+
+		// Fetch the next token for the next iteration
+		token = lex.Next()
 	}
+
+	// Assign the last accumulated section after the loop finishes
 	switch tokenName {
 	case "":
 		break

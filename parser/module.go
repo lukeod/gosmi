@@ -38,7 +38,7 @@ type Node struct {
 	NotificationType  *NotificationType   `parser:"| ( \"NOTIFICATION-TYPE\" @@ )"`
 	ModuleCompliance  *ModuleCompliance   `parser:"| ( \"MODULE-COMPLIANCE\" @@ )"`
 	AgentCapabilities *AgentCapabilities  `parser:"| ( \"AGENT-CAPABILITIES\" @@ ) )"`
-	Oid               *Oid                `parser:"Assign \"{\" @@ \"}\" )"`
+	Oid               *Oid                `parser:"Assign \"{\" @@+ \"}\" )"` // Changed @@ to @@+
 	TrapType          *TrapType           `parser:"| ( ( \"TRAP-TYPE\" @@ )"`
 	SubIdentifier     *types.SmiSubId     `parser:"Assign @Int ) )"`
 }

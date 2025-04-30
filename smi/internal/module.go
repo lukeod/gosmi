@@ -140,7 +140,8 @@ func (x *Module) SetPrefixNode(n *Node) {
 	}
 	for i, subId := range x.PrefixNode.Oid {
 		if subId != n.Oid[i] {
-			x.PrefixNode = FindNodeByOid(i, x.PrefixNode.Oid)
+			nodePtr := FindNodeByOid(i, x.PrefixNode.Oid)
+			x.PrefixNode = nodePtr
 			return
 		}
 	}

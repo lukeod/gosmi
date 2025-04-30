@@ -16,15 +16,19 @@ type SubIdentifier struct {
 }
 
 func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
-	token := lex.Next()
-	if token.EOF() {
+	peekedToken := lex.Peek()
+	if peekedToken.EOF() {
 		return fmt.Errorf("unexpected EOF at start of SubIdentifier parse")
 	}
-	x.Pos = token.Pos
+
 	symbols := smiLexer.Symbols()
 	intType := symbols["Int"]
 	identType := symbols["Ident"]
-	if token.Type == intType {
+
+	// Case 1: Just a number
+	if peekedToken.Type == intType {
+		token := lex.Next() // Consume the Int token
+		x.Pos = token.Pos
 		n, err := strconv.ParseUint(token.Value, 10, 32)
 		if err != nil {
 			return fmt.Errorf("Parse number: %w", err)
@@ -32,53 +36,47 @@ func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 		x.Number = new(types.SmiSubId)
 		*x.Number = types.SmiSubId(n)
 		return nil
-	} else if token.Type != identType {
-		return fmt.Errorf("Unexpected %q, expected Ident", token)
 	}
-	x.Name = new(types.SmiIdentifier)
-	*x.Name = types.SmiIdentifier(token.Value)
-	// Peek ahead to check for the optional number in parentheses
-	peekedToken := lex.Peek()
-	if peekedToken.EOF() {
-		// It's okay to EOF after just an identifier name
+
+	// Case 2: Starts with an Identifier
+	if peekedToken.Type == identType {
+		identToken := lex.Next() // Consume the Ident token
+		x.Pos = identToken.Pos
+		x.Name = new(types.SmiIdentifier)
+		*x.Name = types.SmiIdentifier(identToken.Value)
+
+		// Peek ahead for optional "(Number)"
+		peekParen := lex.Peek()
+		if peekParen.EOF() || peekParen.Value != "(" {
+			// It's just an identifier, parsing is complete
+			return nil
+		}
+
+		// Consume "("
+		lex.Next()
+
+		// Consume Number
+		numToken := lex.Next()
+		if numToken.EOF() || numToken.Type != intType {
+			return fmt.Errorf("unexpected %q after '(', expected Int", numToken)
+		}
+		n, err := strconv.ParseUint(numToken.Value, 10, 32)
+		if err != nil {
+			return fmt.Errorf("Parse number: %w", err)
+		}
+		x.Number = new(types.SmiSubId)
+		*x.Number = types.SmiSubId(n)
+
+		// Consume ")"
+		closeParenToken := lex.Next()
+		if closeParenToken.EOF() || closeParenToken.Value != ")" {
+			return fmt.Errorf("unexpected %q after number %d, expected ')'", closeParenToken, n)
+		}
 		return nil
 	}
-	// If the next token is not "(", we just have the identifier name
-	if peekedToken.Value != "(" {
-		return nil
-	}
 
-	// Consume the "("
-	consumedOpenParen := lex.Next()
-	if consumedOpenParen.EOF() {
-		return fmt.Errorf("unexpected EOF after identifier %q, expected '('", *x.Name)
-	}
-	// We already peeked and confirmed it's "(", so no need to check value again unless for robustness
-
-	// Consume the number inside the parentheses
-	numToken := lex.Next()
-	if numToken.EOF() {
-		return fmt.Errorf("unexpected EOF after '(', expected Int")
-	}
-	if numToken.Type != intType {
-		return fmt.Errorf("Unexpected %q, expected Int", numToken)
-	}
-	n, err := strconv.ParseUint(numToken.Value, 10, 32)
-	if err != nil {
-		return fmt.Errorf("Parse number: %w", err)
-	}
-	x.Number = new(types.SmiSubId)
-	*x.Number = types.SmiSubId(n)
-
-	// Consume the ")"
-	closeParenToken := lex.Next()
-	if closeParenToken.EOF() {
-		return fmt.Errorf("unexpected EOF after number %d, expected ')'", n)
-	}
-	if closeParenToken.Value != ")" {
-		return fmt.Errorf("Unexpected %q, expected \")\"", closeParenToken)
-	}
-	return nil
+	// If neither Int nor Ident, it's an error
+	return fmt.Errorf("unexpected %q, expected Int or Ident", peekedToken)
 }
 
 type Oid struct {

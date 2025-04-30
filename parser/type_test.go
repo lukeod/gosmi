@@ -314,20 +314,19 @@ func TestTypeAssignmentParsing(t *testing.T) {
 			input: `TEST-MIB DEFINITIONS ::= BEGIN
 					MyImplicitAppType ::= [APPLICATION 5] IMPLICIT INTEGER { zero(0) }
 					END`,
-			wantErr: true, // Parser currently fails with lexer error after ']'
+			wantErr: false, // Parser now handles this syntax
 			check: func(t *testing.T, mod *parser.Module) {
-				// This check won't run if wantErr is true
-				// typ := findTypeByName(t, mod, "MyImplicitAppType")
-				// require.NotNil(t, typ.Implicit)
-				// imp := typ.Implicit
-				// assert.True(t, imp.Application)
-				// assert.Equal(t, 5, imp.Number)
-				// require.NotNil(t, imp.Syntax)
-				// assert.Equal(t, types.SmiIdentifier("INTEGER"), imp.Syntax.Name)
-				// require.NotNil(t, imp.Syntax.Enum)
-				// require.Len(t, imp.Syntax.Enum, 1)
-				// assert.Equal(t, types.SmiIdentifier("zero"), imp.Syntax.Enum[0].Name)
-				// assert.Equal(t, "0", imp.Syntax.Enum[0].Value)
+				// This check should now run and verify the parsed Implicit structure
+				typ := findTypeByName(t, mod, "MyImplicitAppType")
+				require.NotNil(t, typ.Implicit, "Expected Implicit field to be populated")
+				imp := typ.Implicit
+				assert.Equal(t, "[APPLICATION 5]", imp.Tag, "Tag value mismatch") // Check the raw tag string
+				require.NotNil(t, imp.Syntax, "Expected Syntax field within Implicit to be populated")
+				assert.Equal(t, types.SmiIdentifier("INTEGER"), imp.Syntax.Name, "Implicit Syntax Name mismatch")
+				require.NotNil(t, imp.Syntax.Enum, "Expected Enum field within Implicit.Syntax") // Check Enum on imp.Syntax
+				require.Len(t, imp.Syntax.Enum, 1, "Enum length mismatch")
+				assert.Equal(t, types.SmiIdentifier("zero"), imp.Syntax.Enum[0].Name, "Enum name mismatch")
+				assert.Equal(t, "0", imp.Syntax.Enum[0].Value, "Enum value mismatch")
 			},
 		},
 		{

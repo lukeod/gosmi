@@ -152,7 +152,7 @@ line two"`, // Raw newline within the string
 			name:  "ExtUTCTime - Long",
 			input: `"20240430143000Z"`,
 			expected: []lexer.Token{
-				{Type: lexer.TokenType(-9), Value: `"20240430143000Z"`}, // Raw lexer value includes quotes
+				{Type: lexer.TokenType(-10), Value: `"20240430143000Z"`}, // Raw lexer value includes quotes
 			},
 		},
 		{
@@ -179,9 +179,9 @@ line two"`, // Raw newline within the string
 			name:  "Keyword - Other (as Ident)", // Most keywords are just identifiers to the lexer
 			input: `DEFINITIONS BEGIN END MODULE-IDENTITY OBJECT-TYPE`,
 			expected: []lexer.Token{
-				{Type: smiLexer.Symbols()["Ident"], Value: "DEFINITIONS"},
-				{Type: smiLexer.Symbols()["Ident"], Value: "BEGIN"},
-				{Type: smiLexer.Symbols()["Ident"], Value: "END"},
+				{Type: smiLexer.Symbols()["Keyword"], Value: "DEFINITIONS"},
+				{Type: smiLexer.Symbols()["Keyword"], Value: "BEGIN"},
+				{Type: smiLexer.Symbols()["Keyword"], Value: "END"},
 				{Type: smiLexer.Symbols()["Ident"], Value: "MODULE-IDENTITY"},
 				{Type: smiLexer.Symbols()["Ident"], Value: "OBJECT-TYPE"}, // Note: OBJECT-TYPE is Ident, OBJECT TYPE is handled by parser mapping
 			},
