@@ -220,6 +220,14 @@ func GetNodeType(smiNodePtr *types.SmiNode) *types.SmiType {
 	}
 	objPtr := (*internal.Object)(unsafe.Pointer(smiNodePtr))
 	if objPtr.Type == nil {
+		// Try to find the type through the module if available
+		if objPtr.Module != nil && objPtr.Module.Types != nil {
+			// Look for a type with the same name as the node
+			typeObj := objPtr.Module.Types.Get(objPtr.Name)
+			if typeObj != nil {
+				return &typeObj.SmiType
+			}
+		}
 		return nil
 	}
 	return &objPtr.Type.SmiType

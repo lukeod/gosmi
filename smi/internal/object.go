@@ -95,10 +95,11 @@ func (x *Object) AddRefinement(refinement *Refinement) {
 }
 
 func (x *Object) GetSmiNode() *types.SmiNode {
-	if len(x.Oid) == 0 && x.Node != nil {
+	if x.Node != nil {
+		// Always update Oid from Node to ensure it's current
 		x.Oid = x.Node.Oid
-	}
-	if x.OidLen <= 0 {
+		x.OidLen = x.Node.OidLen
+	} else if len(x.Oid) > 0 && x.OidLen <= 0 {
 		x.OidLen = len(x.Oid)
 	}
 	return &x.SmiNode
