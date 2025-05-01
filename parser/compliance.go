@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	gosmilexer "github.com/lukeod/gosmi/parser/lexer" // Import the refactored lexer package
 	"github.com/lukeod/gosmi/types"
 )
 
@@ -71,7 +72,8 @@ func (n *ComplianceModuleName) Parse(lex *lexer.PeekingLexer) error {
 		*n = ""
 		return nil
 	}
-	assignType := smiLexer.Symbols()["Assign"]
+	// Get symbols from the refactored lexer definition
+	assignType := (&gosmilexer.LexerDefinition{}).Symbols()["Assign"]
 	if token.Type == assignType || token.Value == "MANDATORY-GROUPS" || token.Value == "GROUP" || token.Value == "OBJECT" {
 		// If the next token indicates the start of the next clause, the module name is implicitly empty.
 		*n = ""

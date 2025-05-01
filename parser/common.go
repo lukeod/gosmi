@@ -5,8 +5,9 @@ import (
 	"strconv"
 
 	"github.com/alecthomas/participle/v2/lexer"
-
+	gosmilexer "github.com/lukeod/gosmi/parser/lexer"
 	"github.com/lukeod/gosmi/types"
+	// No need to import the token package directly here
 )
 
 type SubIdentifier struct {
@@ -21,7 +22,8 @@ func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 		return fmt.Errorf("unexpected EOF at start of SubIdentifier parse")
 	}
 
-	symbols := smiLexer.Symbols()
+	// Get symbols from the refactored lexer definition
+	symbols := (&gosmilexer.LexerDefinition{}).Symbols()
 	intType := symbols["Int"]
 	identType := symbols["Ident"]
 

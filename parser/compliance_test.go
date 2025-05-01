@@ -38,7 +38,7 @@ testAgentCaps AGENT-CAPABILITIES
         VARIATION   otherObject
             DESCRIPTION "Variation for otherObject"
           ::= { experimental 0 }
-         
+
          testGroup1 OBJECT-GROUP OBJECTS { testObject1 } STATUS current DESCRIPTION "Group 1" ::= { experimental 1 }
 testGroup2 NOTIFICATION-GROUP NOTIFICATIONS { testNotif1 } STATUS current DESCRIPTION "Group 2" ::= { experimental 2 }
 testObject1 OBJECT-TYPE SYNTAX Integer32 MAX-ACCESS read-create STATUS current DESCRIPTION "Object 1" ::= { experimental 3 }
@@ -287,7 +287,7 @@ testCompliance MODULE-COMPLIANCE
         OBJECT otherObject
         	DESCRIPTION "Refinement for otherObject."
        ::= { experimental 0 }
-      
+
       testGroup1 OBJECT-GROUP OBJECTS { testObject1 } STATUS current DESCRIPTION "Group 1" ::= { experimental 1 }
 testGroup2 OBJECT-GROUP OBJECTS { testObject2 } STATUS current DESCRIPTION "Group 2" ::= { experimental 2 }
 testObject1 OBJECT-TYPE SYNTAX Integer32 MAX-ACCESS read-create STATUS current DESCRIPTION "Object 1" ::= { experimental 3 }

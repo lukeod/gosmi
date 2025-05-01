@@ -1,55 +1,12 @@
 package testutil
 
 import (
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/lukeod/gosmi/parser"
 	"github.com/lukeod/gosmi/types"
 	"github.com/stretchr/testify/require"
 )
-
-// mustParseSnippet parses a MIB definition snippet string.
-// It uses t.Fatal if any parsing error occurs, ensuring the test stops immediately.
-// Returns the parsed *parser.Module on success.
-// This helper is useful for tests that need a valid parsed structure as input
-// and where a parsing failure should immediately fail the test.
-func mustParseSnippet(t *testing.T, snippet string) *parser.Module {
-	t.Helper() // Marks this function as a test helper
-	mod, err := parser.Parse(t.Name(), strings.NewReader(snippet))
-	require.NoError(t, err, "mustParseSnippet failed unexpectedly for snippet:\n%s", snippet)
-	require.NotNil(t, mod, "mustParseSnippet returned nil module without error for snippet:\n%s", snippet)
-	return mod
-}
-
-// assertNodeType checks if the type of the 'node' interface{} matches the
-// type represented by 'expectedType'. 'expectedType' should be a zero value
-// of the expected type (e.g., parser.ObjectType{}).
-// It uses t.Errorf for failures, allowing the test to continue reporting other errors.
-func assertNodeType(t *testing.T, expectedType interface{}, node interface{}) {
-	t.Helper() // Marks this function as a test helper
-	if node == nil {
-		t.Errorf("assertNodeType failed: node is nil, expected type %T", expectedType)
-		return
-	}
-	expected := reflect.TypeOf(expectedType)
-	actual := reflect.TypeOf(node)
-	// Use PkgPath and Name for comparison to handle types correctly, especially pointers.
-	// If the actual node is a pointer, get the element type it points to.
-	if actual.Kind() == reflect.Ptr {
-		actual = actual.Elem()
-	}
-	// If the expected type is a pointer type, get the element type it points to.
-	if expected.Kind() == reflect.Ptr {
-		expected = expected.Elem()
-	}
-
-	if expected.PkgPath() != actual.PkgPath() || expected.Name() != actual.Name() {
-		t.Errorf("assertNodeType failed: expected type %s.%s, but got %s.%s",
-			expected.PkgPath(), expected.Name(), actual.PkgPath(), actual.Name())
-	}
-}
 
 // FindNodeByName searches the parsed module's top-level nodes (Nodes and Types)
 // for a node with the given name. It uses require.FailNowf if the node is not found.

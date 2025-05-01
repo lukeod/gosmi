@@ -437,9 +437,9 @@ END
 
 	// Find the group and verify its contents after the fix
 	var groupNode *parser.Node
-	for _, node := range mod.Body.Nodes {
-		if node.Name == "testObjectGroupComma" {
-			groupNode = &node
+	for i := range mod.Body.Nodes {
+		if mod.Body.Nodes[i].Name == "testObjectGroupComma" {
+			groupNode = &mod.Body.Nodes[i] // Take address of slice element directly
 			break
 		}
 	}

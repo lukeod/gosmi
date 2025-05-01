@@ -5,72 +5,21 @@ import (
 	"io"
 	"os"
 	"path/filepath" // Added for file path manipulation
-	"regexp"
-	"strings"
 
 	"github.com/alecthomas/participle/v2"
-	"github.com/alecthomas/participle/v2/lexer"
+	gosmilexer "github.com/lukeod/gosmi/parser/lexer" // Import the refactored lexer package
 )
 
 var (
-	// Define the lexer using lexer.NewSimple
-	smiLexer = lexer.MustSimple([]lexer.SimpleRule{
-		{Name: "Comment", Pattern: `--[^\n]*`},
-		{Name: "Whitespace", Pattern: `[ \t\n\r]+`},
-		// Keywords and specific multi-word tokens need to be defined before Ident
-		// Use non-capturing groups for spaces to avoid them being part of the token value if needed,
-		// although participle.Map is used later anyway.
-		{Name: "ObjectIdentifier", Pattern: `OBJECT\s+IDENTIFIER`},
-		{Name: "OctetString", Pattern: `OCTET\s+STRING`},
-		// ASN.1 specific tags - must come before keywords and punctuation
-		{Name: "ASN1Tag", Pattern: `\[APPLICATION\s+\d+\]`},
-		// ASN.1 specific keywords (APPLICATION handled by ASN1Tag rule)
-		{Name: "Keyword", Pattern: `FROM|IMPLICIT|CHOICE|SIZE|BEGIN|END|DEFINITIONS`}, // Common keywords in MIB files
-		{Name: "Assign", Pattern: `::=`},
-		{Name: "ExtUTCTime", Pattern: `"(\d{10}(\d{2})?[zZ])"`}, // Capture content inside quotes
-		{Name: "Text", Pattern: `"(\\.|[^"])*"`},                // Capture content inside quotes, allowing escaped quotes
-		{Name: "BinString", Pattern: `'[01]*'[bB]`},             // Also allow empty binary string ''B
-		{Name: "HexString", Pattern: `'[0-9a-fA-F]*'[hH]`},      // Allow empty hex string ''H
-		{Name: "Ident", Pattern: `[a-zA-Z][a-zA-Z0-9_-]*`},
-		{Name: "Int", Pattern: `0|[1-9]\d*`},
-		{Name: "Punct", Pattern: `\.\.|[!-\&\\(-/:-@\[\\` + "`" + `{-\~]`}, // Punctuation (excluding ')
-	})
-
-	compressSpace = regexp.MustCompile(`(?:\r?\n *)+`)
-	smiParser     = participle.MustBuild[Module](
-		participle.Lexer(smiLexer),       // Use the new Simple lexer
-		participle.Unquote("ExtUTCTime"), // Use standard unquoting only for dates
-		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			token.Value = "OBJECT IDENTIFIER" // Ensure the mapped value is correct
-			return token, nil
-		}, "ObjectIdentifier"),
-		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			token.Value = "OCTET STRING" // Ensure the mapped value is correct
-			return token, nil
-		}, "OctetString"),
-		participle.Map(func(token lexer.Token) (lexer.Token, error) {
-			// Manually unquote: remove outer quotes and handle basic escapes (\", \\).
-			// This avoids issues with strconv.Unquote and raw newlines in multi-line strings.
-			if len(token.Value) < 2 || token.Value[0] != '"' || token.Value[len(token.Value)-1] != '"' {
-				// Should not happen based on the lexer rule, but check defensively.
-				return token, fmt.Errorf("unexpected format for Text token: %q", token.Value)
-			}
-			// Slice off outer quotes
-			content := token.Value[1 : len(token.Value)-1]
-
-			// Handle basic escapes
-			content = strings.ReplaceAll(content, `\\`, `\`)
-			content = strings.ReplaceAll(content, `\"`, `"`)
-
-			// Trim leading/trailing whitespace and compress internal whitespace like original parser
-			content = strings.TrimSpace(content)
-			content = compressSpace.ReplaceAllString(content, "\n")
-
-			token.Value = content
-			return token, nil
-		}, "Text"),
-		participle.Upper("ExtUTCTime", "BinString", "HexString"),
-		participle.Elide("Whitespace", "Comment"),
+	// Removed: compressSpace = regexp.MustCompile(`(?:\r?\n *)+`)
+	smiParser = participle.MustBuild[Module](
+		participle.Lexer(&gosmilexer.LexerDefinition{}), // Pass a pointer to the refactored lexer definition
+		participle.Unquote("ExtUTCTime"),                // Keep for now, might be redundant depending on parser needs
+		// Removed Map for ObjectIdentifier - handled by handwritten lexer
+		// Removed Map for OctetString - handled by handwritten lexer
+		// Removed Map for Text - whitespace compression and unquoting now handled directly in lexer's lexText function
+		participle.Upper("ExtUTCTime", "BinString", "HexString"), // Keep for consistency if parser expects uppercase
+		// Removed Elide("Whitespace", "Comment") - handled by handwritten lexer's NextToken loop
 	)
 )
 

@@ -279,11 +279,11 @@ END
 	tempDir := t.TempDir()
 
 	validMibPath := filepath.Join(tempDir, "valid.mib")
-	err := os.WriteFile(validMibPath, []byte(validMibContent), 0644)
+	err := os.WriteFile(validMibPath, []byte(validMibContent), 0600)
 	require.NoError(t, err, "Failed to write valid temp MIB file")
 
 	invalidMibPath := filepath.Join(tempDir, "invalid.mib")
-	err = os.WriteFile(invalidMibPath, []byte(invalidMibContent), 0644)
+	err = os.WriteFile(invalidMibPath, []byte(invalidMibContent), 0600)
 	require.NoError(t, err, "Failed to write invalid temp MIB file")
 
 	nonExistentPath := filepath.Join(tempDir, "nonexistent.mib")

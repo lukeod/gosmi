@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	gosmilexer "github.com/lukeod/gosmi/parser/lexer" // Import the refactored lexer package
 	"github.com/lukeod/gosmi/types"
 )
 
@@ -28,7 +29,8 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 
 	var tokenName, tokenValue string
 	m.Tokens = make(map[string]string)
-	symbols := smiLexer.Symbols()
+	// Get symbols from the refactored lexer definition
+	symbols := (&gosmilexer.LexerDefinition{}).Symbols()
 	assignType := symbols["Assign"]
 	textType := symbols["Text"]
 
